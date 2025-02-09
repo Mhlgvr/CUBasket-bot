@@ -23,9 +23,11 @@ class Confirm(StatesGroup):
     leaving = State()
 
 class Edit(StatesGroup):
-    edit_team_name = State()
+    team_name = State()
+    info = State()
 
-about_tournament = '''Информация о турнире'''
+
+about_tournament = '''информация о турнире'''
 
 @router.message(CommandStart())
 async def start_menu(message: Message):
@@ -98,15 +100,11 @@ async def get_my_team(callback: CallbackQuery):
 @router.callback_query(F.data == 'edit_team_name')
 async def edit_team_name_1(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
-    await state.set_state(Edit.edit_team_name)
+    await state.set_state(Edit.team_name)
     await callback.message.edit_text('Напиши новое название', reply_markup=kb.back2)
 
-@router.message(Edit.edit_team_name)
+@router.message(Edit.team_name)
 async def edit_team_name_2(message: Message, state: FSMContext):
-    # if callback.data == 'back_to_start':
-    #     await callback.answer()
-    #     # await callback.message.delete()
-    #     await cmd_start(callback.message)
     await state.clear()
     await sq.edit_team_name(message.from_user.id, message.text)
     await message.answer('Название команды изменено', reply_markup=kb.menu)
@@ -137,15 +135,31 @@ async def admin_panel(message: Message):
     user_id = message.from_user.id
     print(ADMIN_ID, user_id)
     if str(user_id) == ADMIN_ID:
-        await message.answer('Админ-панель', reply_markup=kb.admin)
+        await message.answer('ADMIN PANEL', reply_markup=kb.admin)
     else:
         await message.reply('ты не админ')
+
+@router.callback_query(F.data == 'back_to_admin')
+async def go_to_admin(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback.message.edit_text('ADMIN PANEL', reply_markup=kb.admin)
 
 @router.callback_query(F.data == 'all_teams')
 async def get_all_teams(callback: CallbackQuery):
     data = await sq.get_teams_info()
     await callback.answer()
-    await callback.message.answer(data)
-    await callback.message.answer('Админ-панель', reply_markup=kb.admin)
+    await callback.message.answer(data, reply_markup=kb.admin)
 
+@router.callback_query(F.data == 'edit_info')
+async def edit_info_1(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await state.set_state(Edit.info)
+    await callback.message.edit_text('SEND NEW INFORMATION', reply_markup=kb.back3)
+
+@router.message(Edit.info)
+async def edit_info_2(message: Message, state: FSMContext):
+    await state.clear()
+    global about_tournament
+    about_tournament = message.text
+    await message.answer('INFORMATION UPDATED', reply_markup=kb.admin)
 

@@ -37,6 +37,10 @@ back2 = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='отмена', callback_data='back_to_menu')],
 ])
 
+back3 = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='return', callback_data='back_to_admin')],
+])
+
 answer = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='да', callback_data='yes'),
     InlineKeyboardButton(text='нет', callback_data='no')],
@@ -54,7 +58,8 @@ async def teams():
 
 
 admin = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Все команды', callback_data='all_teams')]
+    [InlineKeyboardButton(text='TEAMS', callback_data='all_teams')],
+    [InlineKeyboardButton(text='UPDATE INFO', callback_data='edit_info')]
 ])
 
 

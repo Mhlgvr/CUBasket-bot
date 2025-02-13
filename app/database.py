@@ -10,7 +10,7 @@ async def db_connect():
                     username TEXT, name TEXT, thread TEXT)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS teams (thread TEXT, name TEXT)""")
 
-    check = cur.execute("SELECT COUNT(*) FROM teams").fetchone()[0]
+    check = cur.execute("SELECT COUNT(*) FROM teams").fetchone()
     if not check:
         cur.execute("""INSERT INTO teams (thread, name) VALUES
                     ('Запад', 'WEST'),
@@ -24,11 +24,12 @@ async def db_connect():
 
 
 async def user_exists(tg_id):
-    user = cur.execute("SELECT name FROM users WHERE tg_id = ?", (tg_id,)).fetchone()[0]
-    if not user:
-        return False
-    else:
+    user = cur.execute("SELECT COUNT(*) FROM users WHERE tg_id = ?", (tg_id,)).fetchone()[0]
+    print(user)
+    if user == 1:
         return True
+    else:
+        return False
 
 async def get_team_members(tg_id):
     members = cur.execute(f"""SELECT u2.name, u2.username FROM users u1 

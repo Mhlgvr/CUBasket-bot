@@ -2,7 +2,7 @@
 from aiogram import F, Router
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart, Command
-# from sqlalchemy.testing.config import any_async
+from aiogram.utils.formatting import Text, Bold
 
 import app.keyboards as kb
 from aiogram.fsm.state import State, StatesGroup
@@ -37,9 +37,11 @@ about_tournament = '''информация о турнире'''
 
 @router.message(CommandStart())
 async def start_menu(message: Message):
-    if not user_exists(message.from_user.id):
+    check = await user_exists(message.from_user.id)
+    print(check)
+    if not check:
         await message.answer("""
-        Привет! 
+        Пока 
         Присоединяйся к своей команде на первом баскетбольном турнире Центрального университета!
         """, reply_markup=kb.start)
     else:

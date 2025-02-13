@@ -2,6 +2,8 @@
 from aiogram import F, Router
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart, Command
+# from sqlalchemy.testing.config import any_async
+
 import app.keyboards as kb
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
@@ -10,6 +12,9 @@ import app.database as sq
 
 from dotenv import load_dotenv
 from os import getenv
+
+from app.database import user_exists
+
 load_dotenv()
 ADMIN_ID = getenv("ADMIN_ID")
 
@@ -22,19 +27,23 @@ class Reg(StatesGroup):
 class Confirm(StatesGroup):
     leaving = State()
 
-class Edit(StatesGroup):
+class Admin(StatesGroup):
     team_name = State()
     info = State()
+    send_message = State()
 
 
 about_tournament = '''информация о турнире'''
 
 @router.message(CommandStart())
 async def start_menu(message: Message):
-    await message.answer("""
-    Привет! 
-    Присоединяйся к своей команде на первом баскетбольном турнире Центрального университета!
-    """, reply_markup=kb.start)
+    if not user_exists(message.from_user.id):
+        await message.answer("""
+        Привет! 
+        Присоединяйся к своей команде на первом баскетбольном турнире Центрального университета!
+        """, reply_markup=kb.start)
+    else:
+        await main_menu(message)
 
 
 @router.callback_query(F.data == 'join')
@@ -100,10 +109,10 @@ async def get_my_team(callback: CallbackQuery):
 @router.callback_query(F.data == 'edit_team_name')
 async def edit_team_name_1(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
-    await state.set_state(Edit.team_name)
+    await state.set_state(Admin.team_name)
     await callback.message.edit_text('Напиши новое название', reply_markup=kb.back2)
 
-@router.message(Edit.team_name)
+@router.message(Admin.team_name)
 async def edit_team_name_2(message: Message, state: FSMContext):
     await state.clear()
     await sq.edit_team_name(message.from_user.id, message.text)
@@ -133,7 +142,6 @@ async def leave_team_2(callback: CallbackQuery, state: FSMContext):
 @router.message(Command('admin'))
 async def admin_panel(message: Message):
     user_id = message.from_user.id
-    print(ADMIN_ID, user_id)
     if str(user_id) == ADMIN_ID:
         await message.answer('ADMIN PANEL', reply_markup=kb.admin)
     else:
@@ -153,13 +161,28 @@ async def get_all_teams(callback: CallbackQuery):
 @router.callback_query(F.data == 'edit_info')
 async def edit_info_1(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
-    await state.set_state(Edit.info)
+    await state.set_state(Admin.info)
     await callback.message.edit_text('SEND NEW INFORMATION', reply_markup=kb.back3)
 
-@router.message(Edit.info)
+@router.message(Admin.info)
 async def edit_info_2(message: Message, state: FSMContext):
     await state.clear()
     global about_tournament
     about_tournament = message.text
     await message.answer('INFORMATION UPDATED', reply_markup=kb.admin)
 
+@router.callback_query(F.data == 'send_message')
+async def send_message_1(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await state.set_state(Admin.send_message)
+    await callback.message.edit_text('ENTER MESSAGE', reply_markup=kb.back3)
+
+@router.message(Admin.send_message)
+async def send_message_2(message: Message, state: FSMContext):
+    await state.clear()
+    text = message.text
+    ids = await sq.get_user_ids()
+    bot = message.bot
+    for user_id in ids:
+        await bot.send_message(user_id, text)
+    await message.answer("MESSAGE SENT", reply_markup=kb.admin)

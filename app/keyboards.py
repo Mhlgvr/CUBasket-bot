@@ -1,6 +1,6 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-
+import app.database as sq
 
 start = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='О турнире', callback_data='info1')],
@@ -46,10 +46,10 @@ answer = InlineKeyboardMarkup(inline_keyboard=[
     InlineKeyboardButton(text='нет', callback_data='no')],
 ])
 
-threads = ['Север', 'Юг', 'Запад', 'Восток', 'Магистратура', 'Работники']
 
 async def teams():
     keyboard = InlineKeyboardBuilder()
+    threads = await sq.get_threads()
     for thread in threads:
         keyboard.add(InlineKeyboardButton(text=thread, callback_data=thread))
     keyboard.add(InlineKeyboardButton(text='назад', callback_data='back_to_start'))
@@ -59,7 +59,9 @@ async def teams():
 
 admin = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='TEAMS', callback_data='all_teams')],
-    [InlineKeyboardButton(text='UPDATE INFO', callback_data='edit_info')]
+    [InlineKeyboardButton(text='UPDATE INFO', callback_data='edit_info')],
+    [InlineKeyboardButton(text='SEND MESSAGE', callback_data='send_message')],
+    [InlineKeyboardButton(text='ADD THREAD', callback_data='add_thread')]
 ])
 
 

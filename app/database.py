@@ -23,6 +23,12 @@ async def db_connect():
     db.commit()
 
 
+async def user_exists(tg_id):
+    user = cur.execute("SELECT name FROM users WHERE tg_id = ?", (tg_id,)).fetchone()[0]
+    if not user:
+        return False
+    else:
+        return True
 
 async def get_team_members(tg_id):
     members = cur.execute(f"""SELECT u2.name, u2.username FROM users u1 
@@ -50,12 +56,21 @@ async def delete_user(user_id: int) -> None:
     db.commit()
 
 async def get_teams_info():
-    data = {}
     output = ''
-    threads = ['Север', 'Юг', 'Запад', 'Восток', 'Магистратура', 'Работники']
-    for thread in threads:
-        team_name = cur.execute("SELECT name FROM teams WHERE thread = ?", (thread,)).fetchone()[0]
-        members = cur.execute("SELECT name, username FROM users WHERE thread = ?", (thread,)).fetchall()
-        data.update({team_name: [' @'.join(name) for name in members]})
-        output += team_name + '\n' + '\n'.join(data[team_name]) + '\n' + '\n'
+    team_names = cur.execute("SELECT name FROM teams").fetchall()
+    for team_name in team_names:
+        members = cur.execute("SELECT u.name, u.username FROM users u JOIN teams t ON t.thread = u.thread WHERE t.name = ?", (team_name[0],)).fetchall()
+        output += team_name[0] + '\n' + '\n'.join([' @'.join(member) for member in members]) + '\n' + '\n'
     return output
+
+async def get_user_ids():
+    ids = cur.execute("SELECT tg_id FROM users").fetchall()
+    return [user_id[0] for user_id in ids]
+
+async def add_thread(thread, team_name):
+    cur.execute("INSERT INTO teams (thread, name) VALUES", (thread, team_name,))
+    db.commit()
+
+async def get_threads():
+    threads = cur.execute("SELECT thread FROM teams").fetchall()
+    return [thread[0] for thread in threads]

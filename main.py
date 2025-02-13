@@ -10,10 +10,11 @@ import app.database as sq
 load_dotenv()
 TOKEN = getenv("TOKEN")
 
+bot = Bot(token=TOKEN)
+dp = Dispatcher()
+
 async def main():
     await sq.db_connect()
-    bot = Bot(token=TOKEN)
-    dp = Dispatcher()
     dp.include_router(router)
     print('started')
     await dp.start_polling(bot)

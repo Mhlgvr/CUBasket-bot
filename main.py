@@ -16,7 +16,7 @@ dp = Dispatcher()
 async def main():
     await sq.db_connect()
     dp.include_router(router)
-    print('started')
+    print('start')
     await dp.start_polling(bot)
 
 if __name__ == '__main__':

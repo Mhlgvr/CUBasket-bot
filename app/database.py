@@ -18,14 +18,13 @@ async def db_connect():
                     ('Север', 'NORTH'),
                     ('Юг', 'SOUTH'),
                     ('Магистратура', 'MASTERS'),
-                    ('Работники', 'ELDERS')""")
+                    ('Сотрудники', 'ELDERS')""")
 
     db.commit()
 
 
 async def user_exists(tg_id):
     user = cur.execute("SELECT COUNT(*) FROM users WHERE tg_id = ?", (tg_id,)).fetchone()[0]
-    print(user)
     if user == 1:
         return True
     else:
@@ -58,10 +57,10 @@ async def delete_user(user_id: int) -> None:
 
 async def get_teams_info():
     output = ''
-    team_names = cur.execute("SELECT name FROM teams").fetchall()
-    for team_name in team_names:
-        members = cur.execute("SELECT u.name, u.username FROM users u JOIN teams t ON t.thread = u.thread WHERE t.name = ?", (team_name[0],)).fetchall()
-        output += team_name[0] + '\n' + '\n'.join([' @'.join(member) for member in members]) + '\n' + '\n'
+    teams = cur.execute("SELECT thread, name FROM teams").fetchall()
+    for team in teams:
+        members = cur.execute("SELECT name, username FROM users WHERE thread = ?", (team[0],)).fetchall()
+        output += team[0] + '\n' + team[1] + '\n' + '\n'.join([' @'.join(member) for member in members]) + '\n' + '\n'
     return output
 
 async def get_user_ids():
@@ -69,7 +68,7 @@ async def get_user_ids():
     return [user_id[0] for user_id in ids]
 
 async def add_thread(thread, team_name):
-    cur.execute("INSERT INTO teams (thread, name) VALUES", (thread, team_name,))
+    cur.execute("INSERT INTO teams (thread, name) VALUES (?, ?)", (thread, team_name,))
     db.commit()
 
 async def get_threads():

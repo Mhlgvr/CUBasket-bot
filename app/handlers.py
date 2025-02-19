@@ -103,7 +103,6 @@ async def reg_3(callback: CallbackQuery, state: FSMContext):
         await go_to_start(callback, state)
     await state.update_data(thread=callback.data)
     data = await state.get_data()
-    print(data)
     await sq.add_user(
         callback.from_user.id,
         callback.from_user.username,

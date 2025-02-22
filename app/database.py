@@ -32,6 +32,9 @@ async def user_exists(tg_id):
     else:
         return False
 
+async def count_members():
+    count = cur.execute("SELECT count(*) FROM users").fetchone()
+    return count[0]
 
 async def get_team_members(tg_id):
     members = cur.execute(f"""SELECT u2.name, u2.username FROM users u1

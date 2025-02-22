@@ -9,7 +9,7 @@ from aiogram.types import CallbackQuery, Message
 from aiogram.enums.parse_mode import ParseMode
 from dotenv import load_dotenv
 
-import app.database as sq
+import app.database as db
 import app.keyboards as kb
 from app.database import user_exists
 
@@ -33,7 +33,7 @@ class Admin(StatesGroup):
     add_thread = State()
 
 
-about_tournament = '''CU Backetball Tournament – внутренний турнир среди студентов и сотрудников Центрального университета, организованный баскетбольным клубом ЦБК. Вступай в команду своего потока или приходи болеть за друзей!
+about_tournament = '''<b>CU Backetball Tournament</b> – внутренний турнир среди студентов и сотрудников Центрального университета, организованный баскетбольным клубом ЦБК. Вступай в команду своего потока или приходи болеть за друзей!
 
 За событиями турнира можно следить в канале Центрального Баскетбольного клуба. Туда будет скидываться расписание матчей, результаты, статистика и медиа-контент.
 Ссылка на канал:
@@ -67,13 +67,14 @@ https://t.me/+HyTgxx-lv3pkNmQy
 
 @router.message(CommandStart())
 async def start_menu(message: Message):
+    members_count = await db.count_members()
     check = await user_exists(message.from_user.id)
     if not check:
-        await message.answer("""
+        await message.answer(f"""
 🏀 Привет! 🏀
 
 🤖 Я бот-распределитель для участников турнира по баскетболу в ЦУ. Через меня ты можешь узнать все про турнир и присоединиться к команде своего потока.
-📣 Присоединяйся к команде своего потока или приходи болеть за друзей! 🔥
+📣 Присоединяйся к команде своего потока или приходи болеть за друзей! Уже зарегистрировано {members_count} участников 🔥
 🏅 Победителей ждут уникальные призы
 💡 И помни: не важно, профи ты или новичок — главное желание играть и наслаждаться игрой! 🏆
         """, reply_markup=kb.start)
@@ -94,7 +95,7 @@ async def reg_2(message: Message, state: FSMContext):
     await state.update_data(name=message.text)
     await state.set_state(Reg.thread)
     await message.answer(
-        'Выбери поток: ', reply_markup=await kb.teams())
+        'Выбери поток или напиши @mhlgvr чтобы добавить новую команду:', reply_markup=await kb.teams())
 
 
 @router.callback_query(Reg.thread, F.data)
@@ -104,7 +105,7 @@ async def reg_3(callback: CallbackQuery, state: FSMContext):
         await go_to_start(callback, state)
     await state.update_data(thread=callback.data)
     data = await state.get_data()
-    await sq.add_user(
+    await db.add_user(
         callback.from_user.id,
         callback.from_user.username,
         data['name'],
@@ -116,8 +117,9 @@ async def reg_3(callback: CallbackQuery, state: FSMContext):
 
 @router.message(Command('menu'))
 async def main_menu(message: Message):
+    members_count = await db.count_members()
     await message.answer(
-        'Ждем тебя на турнире!', reply_markup=kb.menu)
+        f'Ждем тебя на турнире! \n Зарегистрировано {members_count} участников', reply_markup=kb.menu)
 
 
 @router.callback_query(F.data == 'info1')
@@ -153,8 +155,8 @@ async def go_to_menu(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == 'team')
 async def get_my_team(callback: CallbackQuery):
     await callback.answer()
-    data = await sq.get_team_members(callback.from_user.id)
-    team_name = await sq.get_team_name(callback.from_user.id)
+    data = await db.get_team_members(callback.from_user.id)
+    team_name = await db.get_team_name(callback.from_user.id)
     await callback.message.edit_text(
         'Твоя команда: \n' + team_name + '\n' + '\n'.join(data),
         reply_markup=kb.team_menu)
@@ -171,7 +173,7 @@ async def edit_team_name_1(callback: CallbackQuery, state: FSMContext):
 @router.message(Admin.team_name)
 async def edit_team_name_2(message: Message, state: FSMContext):
     await state.clear()
-    await sq.edit_team_name(message.from_user.id, message.text)
+    await db.edit_team_name(message.from_user.id, message.text)
     await message.answer(
         'Название команды изменено', reply_markup=kb.menu)
 
@@ -189,7 +191,7 @@ async def leave_team_2(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await state.clear()
     if callback.data == 'yes':
-        await sq.delete_user(callback.from_user.id)
+        await db.delete_user(callback.from_user.id)
         await callback.message.edit_text(
             'Вы покинули команду', reply_markup=kb.start)
     else:
@@ -216,7 +218,7 @@ async def go_to_admin(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == 'all_teams')
 async def get_all_teams(callback: CallbackQuery):
-    data = await sq.get_teams_info()
+    data = await db.get_teams_info()
     await callback.answer()
     await callback.message.answer(data, reply_markup=kb.admin)
 
@@ -250,7 +252,7 @@ async def send_message_1(callback: CallbackQuery, state: FSMContext):
 async def send_message_2(message: Message, state: FSMContext):
     await state.clear()
     text = message.text
-    ids = await sq.get_user_ids()
+    ids = await db.get_user_ids()
     bot = message.bot
     for user_id in ids:
         await bot.send_message(user_id, text)
@@ -269,5 +271,5 @@ async def add_thread_1(callback: CallbackQuery, state: FSMContext):
 async def add_thread_2(message: Message, state: FSMContext):
     await state.clear()
     thread, team_name = message.text.split('_')
-    await sq.add_thread(thread, team_name)
+    await db.add_thread(thread, team_name)
     await message.answer('THREAD ADDED', reply_markup=kb.admin)

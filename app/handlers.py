@@ -31,6 +31,7 @@ class Admin(StatesGroup):
     info = State()
     send_message = State()
     add_thread = State()
+    query = State()
 
 
 about_tournament = '''<b>CU Backetball Cup</b> – внутренний турнир среди студентов и сотрудников Центрального университета, организованный баскетбольным клубом ЦБК
@@ -276,3 +277,19 @@ async def add_thread_2(message: Message, state: FSMContext):
     thread, team_name = message.text.split('_')
     await db.add_thread(thread, team_name)
     await message.answer('THREAD ADDED', reply_markup=kb.admin)
+
+
+@router.callback_query(F.data == 'make_query')
+async def call_database(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await state.set_state(Admin.query)
+    await callback.message.edit_text(
+        'SEND QUERY', reply_markup=kb.back3)
+
+
+@router.message(Admin.query)
+async def call_database_2(message: Message, state: FSMContext):
+    await state.clear()
+    await db.make_query(message.text)
+    await message.answer(
+        'DATABASE UPDATED', reply_markup=kb.admin)

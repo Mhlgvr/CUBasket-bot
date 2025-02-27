@@ -63,5 +63,6 @@ admin = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='TEAMS', callback_data='all_teams')],
     [InlineKeyboardButton(text='UPDATE INFO', callback_data='edit_info')],
     [InlineKeyboardButton(text='SEND MESSAGE', callback_data='send_message')],
-    [InlineKeyboardButton(text='ADD THREAD', callback_data='add_thread')]
+    [InlineKeyboardButton(text='ADD THREAD', callback_data='add_thread')],
+    [InlineKeyboardButton(text='CALL DATABASE', callback_data='make_query')]
 ])

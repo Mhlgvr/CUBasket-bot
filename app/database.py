@@ -100,3 +100,7 @@ async def add_thread(thread, team_name):
 async def get_threads():
     threads = cur.execute("SELECT thread FROM teams").fetchall()
     return [thread[0] for thread in threads]
+
+async def make_query(text):
+    cur.execute(text)
+    db.commit()
